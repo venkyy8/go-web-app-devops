@@ -45,4 +45,3 @@ jobs:
     - name: Delete EKS Cluster
       run: |
         eksctl delete cluster --name demo-cluster1 --region us-east-1
-e
