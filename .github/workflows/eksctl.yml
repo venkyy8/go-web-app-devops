@@ -1,10 +1,10 @@
-name: EKS Cluster Management
+name: EKS Cluster CI
 
 on:
-  workflow_dispatch: # This workflow can be triggered manually from GitHub UI.
+  workflow_dispatch:
 
 jobs:
-  create-eks-cluster:
+  deploy-eks:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,16 +18,31 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    # Step to install eksctl
     - name: Install eksctl
       run: |
-        # Download the latest release of eksctl
         curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.106.0/eksctl_Linux_amd64.tar.gz" -o eksctl_Linux_amd64.tar.gz
-        # Extract the binary and move it to /usr/local/bin
         tar -xzf eksctl_Linux_amd64.tar.gz
         sudo mv eksctl /usr/local/bin
-
-    # Verify eksctl installation
-    - name: Verify eksctl version
-      run: |
         eksctl version
+
+    - name: Create EKS Cluster
+      run: |
+        eksctl create cluster \
+          --name demo-cluster1 \
+          --region us-east-1 \
+          --node-type t2.medium \
+          --nodes 1 \
+          --nodes-min 1 \
+          --nodes-max 1 \
+          --managed \
+          --version 1.22
+
+    - name: Verify Cluster Nodes
+      run: |
+        kubectl config get-contexts
+        kubectl get nodes
+
+    - name: Delete EKS Cluster
+      run: |
+        eksctl delete cluster --name demo-cluster1 --region us-east-1
+e
