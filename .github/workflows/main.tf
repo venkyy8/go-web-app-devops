@@ -5,12 +5,13 @@ name: CI/CD
 # Exclude the workflow to run on changes to the helm chart
 on:
   # push:
-  # branches:
-  #  - main
-  # paths-ignore:
-  #   - 'helm/**'
-  #   - 'k8s/**'
-  #   - 'README.md'
+  #   branches:
+  #     - main
+    # paths-ignore:
+    #   - 'helm/**'
+    #   - 'k8s/**'
+    #   - 'README.md'
+  workflow_dispatch:
 
 jobs:
 
@@ -68,7 +69,7 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_id}}
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/go-web-app:${{github.run_number}}
 
   update-newtag-in-helm-chart:
     runs-on: ubuntu-latest
@@ -79,18 +80,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.GH_TOKEN }}
 
     - name: Update tag in Helm chart
       run: |
-        sed -i 's/tag: .*/tag: "${{github.run_id}}"/' helm/go-web-app-chart/values.yaml
+        sed -i 's/tag: .*/tag: "${{github.run_number}}"/' helm/go-web-app-chart/values.yaml
 
     - name: Commit and push changes
       run: |
-        git config --global user.email "abhishek@gmail.com"
-        git config --global user.name "Abhishek Veeramalla"
+        git config --global user.email "venkyy82@gmail.com"
+        git config --global user.name "venkatesh"
         git add helm/go-web-app-chart/values.yaml
         git commit -m "Update tag in Helm chart"
         git push
 
-
+        
