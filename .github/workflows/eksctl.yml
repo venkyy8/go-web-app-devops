@@ -1,47 +1,48 @@
-name: EKS Cluster CI
+name: Deploy EKS Cluster
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy-eks:
+  eks-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-    - name: Install eksctl
-      run: |
-        curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.106.0/eksctl_Linux_amd64.tar.gz" -o eksctl_Linux_amd64.tar.gz
-        tar -xzf eksctl_Linux_amd64.tar.gz
-        sudo mv eksctl /usr/local/bin
-        eksctl version
+      - name: Install eksctl (latest)
+        run: |
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl_Linux_amd64.tar.gz
+          tar -xzf eksctl_Linux_amd64.tar.gz
+          sudo mv eksctl /usr/local/bin
+          eksctl version
 
-    - name: Create EKS Cluster
-      run: |
-        eksctl create cluster \
-          --name demo-cluster \
-          --region us-east-1 \
-          --node-type t2.medium \
-          --nodes 1 \
-          --nodes-min 1 \
-          --nodes-max 1 \
-          --managed \
-          --version 1.22
+      - name: Create EKS Cluster
+        run: |
+          eksctl create cluster \
+            --name demo-cluster \
+            --region us-east-1 \
+            --version 1.34 \
+            --node-type t3.medium \
+            --nodes 2 \
+            --nodes-min 1 \
+            --nodes-max 3 \
+            --managed
 
-    - name: Verify Cluster Nodes
-      run: |
-        kubectl config get-contexts
-        kubectl get nodes
+      - name: Verify kubectl context and nodes
+        run: |
+          kubectl config get-contexts
+          kubectl get nodes
 
-    - name: Delete EKS Cluster
-      run: |
-        eksctl delete cluster --name demo-cluster1 --region us-east-1
+      - name: Delete EKS Cluster
+        if: always()
+        run: |
+          eksctl delete cluster --name demo-cluster --region us-east-1
