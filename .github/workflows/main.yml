@@ -94,4 +94,73 @@ jobs:
         git commit -m "Update tag in Helm chart"
         git push
 
-        
+  # Job for creating EKS cluster & Deploying the application
+  deploy-to-eks:
+    runs-on: ubuntu-latest
+    needs: update-newtag-in-helm-chart
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+# eksctl create cluster --name demo-cluster --region us-east-1 ### m5.large
+# eksctl delete cluster --name demo-cluster --region us-east-1
+# kubectl config get-contexts
+# kubectl get nodes
+# kubectl apply -f deployment.yaml
+# kubectl apply -f service.yaml
+# helm install my-release ./helm-chart-1-chart -f values.yaml
+
+    - name: Create EKS Cluster using eksctl
+      run: |
+        # Create EKS cluster
+        eksctl create cluster \
+          --name demo-cluster \
+          --region us-east-1 \
+          --node-type t2.medium \
+          --nodes 1 \
+          --nodes-min 1 \
+          --nodes-max 1 \
+          --managed
+
+    - name: Verify kubectl context and nodes
+      run: |
+        kubectl config get-contexts
+        kubectl get nodes
+
+    - name: Create / Update Docker Registry Secret
+      run: |
+        kubectl create secret docker-registry regcred \
+          --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+          --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Install Helm
+      run: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        helm version
+
+    - name: Install go-web-app using Helm
+      run: |
+        helm install go-web-app ./helm/go-web-app-chart
+
+    - name: List All Resources
+      run: |
+        sleep 60
+        echo "Listing deployments"
+        kubectl get deployments
+        echo "Listing pods"
+        kubectl get pods
+        echo "Listing services"
+        kubectl get svc
+
+    - name: Delete EKS Cluster
+      run: |
+        eksctl delete cluster --name demo-cluster --region us-east-1
