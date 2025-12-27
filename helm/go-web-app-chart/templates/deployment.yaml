@@ -20,3 +20,5 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.container.port }}
+      imagePullSecrets:
+        - name: regcred  # Reference to the secret created above
