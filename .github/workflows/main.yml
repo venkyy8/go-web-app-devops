@@ -98,29 +98,24 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    # Step to install eksctl
-    - name: Install eksctl
+    - name: Install eksctl (latest)
       run: |
-        # Download the latest release of eksctl
-        curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.106.0/eksctl_Linux_amd64.tar.gz" -o eksctl_Linux_amd64.tar.gz
-        # Extract the binary and move it to /usr/local/bin
+        curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" -o eksctl_Linux_amd64.tar.gz
         tar -xzf eksctl_Linux_amd64.tar.gz
         sudo mv eksctl /usr/local/bin
         eksctl version
 
-    - name: Create EKS Cluster using eksctl
+    - name: Create EKS Cluster
       run: |
-        # Create EKS cluster with a supported Kubernetes version
         eksctl create cluster \
-          --name demo-cluster1 \
+          --name demo-cluster \
           --region us-east-1 \
+          --version 1.34 \
           --node-type t2.medium \
           --nodes 1 \
           --nodes-min 1 \
           --nodes-max 1 \
-          --managed \
-          --version 1.30
-
+          --managed
 
     - name: Verify kubectl context and nodes
       run: |
@@ -154,5 +149,6 @@ jobs:
         kubectl get svc
 
     - name: Delete EKS Cluster
+      if: always()
       run: |
         eksctl delete cluster --name demo-cluster1 --region us-east-1
