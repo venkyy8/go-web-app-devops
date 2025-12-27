@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: venkyy82/go-web-app
-  tag: "8"
+  tag: "9"
   pullPolicy: IfNotPresent
 
 service:
